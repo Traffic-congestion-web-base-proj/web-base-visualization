@@ -4,22 +4,21 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Mapbox Visualization</title>
-    <!-- Leaflet.js 및 Mapbox 스타일 추가 -->
+    <!-- Mapbox CSS -->
     <link rel="stylesheet" href="https://api.mapbox.com/mapbox.js/v3.3.1/mapbox.css" />
-    <script src="https://api.mapbox.com/mapbox.js/v3.3.1/mapbox.js"></script>
-    <link rel="stylesheet" href="https://api.mapbox.com/mapbox.js/v3.3.1/mapbox.css" />
+    <!-- Custom CSS -->
     <link rel="stylesheet" href="css/styles.css" />
+    <!-- Mapbox JS -->
     <script src="https://api.mapbox.com/mapbox.js/v3.3.1/mapbox.js"></script>
   </head>
   <body>
     <div id="map"></div>
     <div id="selectedEdge"></div>
     <div id="controls">
-        <label for="timeSlider">시간대 선택:</label>
-        <input type="range" id="timeSlider" min="0" max="86400" step="1800" value="0" />
-        <span id="timeLabel">00:00 - 00:30</span>
-      </div>
-      
+      <label for="timeSlider">시간대 선택:</label>
+      <input type="range" id="timeSlider" min="0" max="86400" step="1800" value="0" />
+      <span id="timeLabel">00:00 - 00:30</span>
+    </div>
 
     <script src="https://d3js.org/d3.v6.min.js"></script>
     <script src="js/map.js"></script>
