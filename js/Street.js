@@ -45,5 +45,4 @@ fetch(dataPath)
 
       featureGroup.addLayer(polyline);
     });
-  })
-  .catch((error) => console.error("Error fetching CSV file:", error));
+  });
