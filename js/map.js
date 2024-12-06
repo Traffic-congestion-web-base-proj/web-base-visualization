@@ -3,7 +3,7 @@ L.mapbox.accessToken = "pk.eyJ1IjoibGN3MjAwMSIsImEiOiJjbTRjOHZzN2IwN3JhMmpxcXF5e
 
 var map = L.mapbox
   .map("map", null, { minZoom: 13.5, zoomControl: false })
-  .setView([37.5088, 127.045], 14)
+  .setView([37.5088, 127.045],14)
   .addLayer(L.mapbox.styleLayer("mapbox://styles/mapbox/streets-v11"))
 
   var bounds = [[37.47785, 127.00195], [37.54641, 127.09208]];
