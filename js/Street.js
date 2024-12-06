@@ -11,8 +11,12 @@ const timeLabel = document.getElementById("timeLabel");
 
 // 초를 HH:MM 형식으로 변환하는 유틸리티 함수
 function secondsToHHMM(seconds) {
-  const h = Math.floor(seconds / 3600).toString().padStart(2, "0");
-  const m = Math.floor((seconds % 3600) / 60).toString().padStart(2, "0");
+  const h = Math.floor(seconds / 3600)
+    .toString()
+    .padStart(2, "0");
+  const m = Math.floor((seconds % 3600) / 60)
+    .toString()
+    .padStart(2, "0");
   return `${h}:${m}`;
 }
 
@@ -38,9 +42,7 @@ fetch(densityPath)
 
       // 선택된 시간대 데이터 필터링
       const filteredDensityData = densityData.filter(
-        (row) =>
-          parseFloat(row.interval_begin) === selectedTime &&
-          parseFloat(row.interval_end) === adjustedNextTime
+        (row) => parseFloat(row.interval_begin) === selectedTime && parseFloat(row.interval_end) === adjustedNextTime
       );
 
       updateRoads(filteredDensityData);
@@ -96,9 +98,7 @@ function updateRoads(filteredDensityData) {
             density: density,
           },
         })
-          .bindPopup(
-            `도로명: ${roadName}<br>LINK_ID: ${roadId}<br>밀도: ${density}`
-          )
+          .bindPopup(`도로명: ${roadName}<br>LINK_ID: ${roadId}<br>밀도: ${density}`)
           .on("mouseover", function () {
             this.openPopup();
           })
@@ -111,3 +111,4 @@ function updateRoads(filteredDensityData) {
     })
     .catch((error) => console.error("Error fetching edge data:", error));
 }
+/*test*/
