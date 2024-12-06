@@ -9,3 +9,4 @@ var map = L.mapbox
   var bounds = [[37.47785, 127.00195], [37.53641, 127.09208]];
   map.fitBounds(bounds);
   map.setMaxBounds(bounds); // 지도 이동 제한
+  /*test */
