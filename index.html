@@ -14,6 +14,12 @@
   <body>
     <div id="map"></div>
     <div id="selectedEdge"></div>
+    <div id="controls">
+        <label for="timeSlider">시간대 선택:</label>
+        <input type="range" id="timeSlider" min="0" max="86400" step="1800" value="0" />
+        <span id="timeLabel">00:00 - 00:30</span>
+      </div>
+      
 
     <script src="https://d3js.org/d3.v6.min.js"></script>
     <script src="js/map.js"></script>
