@@ -1,3 +1,4 @@
+/* 기존 스타일 유지 */
 body,
 html {
   margin: 0;
@@ -9,9 +10,9 @@ html {
 #map {
   position: absolute;
   top: 0;
-  left: 0;
-  width: 100%;
-  height: 100%;
+  left: 200px; /* 사이드바 공간을 확보 */
+  width: calc(100% - 200px); /* 사이드바 제외한 너비 */
+  height: 100%; /* 화면 전체 높이 */
 }
 
 #selectedEdge {
@@ -46,3 +47,45 @@ html {
   font-weight: bold;
 }
 
+#sidebar {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 200px;
+  height: 100%;
+  background: #f4f4f4;
+  box-shadow: 2px 0 5px rgba(0, 0, 0, 0.1);
+  overflow-y: auto;
+  z-index: 1000;
+  padding: 10px;
+}
+
+#sidebar h3 {
+  margin: 0 0 10px;
+  font-size: 16px;
+  text-align: center;
+}
+
+#region-list {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+}
+
+#region-list li {
+  padding: 10px;
+  border: 1px solid #ddd;
+  border-radius: 4px;
+  margin-bottom: 8px;
+  cursor: pointer;
+  background-color: #fff;
+  transition: background-color 0.3s;
+}
+
+#region-list li:hover {
+  background-color: #e0e0e0;
+}
+
+#region-list li.selected {
+  background-color: #e0f7fa;
+}

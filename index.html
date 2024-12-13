@@ -12,17 +12,28 @@
     <script src="https://api.mapbox.com/mapbox.js/v3.3.1/mapbox.js"></script>
   </head>
   <body>
+    <!-- 사이드바 -->
+    <div id="sidebar">
+      <h3>구역 목록</h3>
+      <ul id="region-list">
+        <!-- JavaScript에서 동적으로 목록 추가 -->
+      </ul>
+    </div>
+
+    <!-- 지도 -->
     <div id="map"></div>
-    <div id="selectedEdge"></div>
+
+    <!-- 컨트롤 패널 -->
     <div id="controls">
       <label for="timeSlider">시간대 선택:</label>
       <input type="range" id="timeSlider" min="0" max="86400" step="1800" value="0" />
       <span id="timeLabel">00:00 - 00:30</span>
     </div>
 
+    <!-- JavaScript -->
     <script src="https://d3js.org/d3.v6.min.js"></script>
     <script src="js/map.js"></script>
-    <script src="js/Section.js"></script>
+    <script src="js/Section.js" defer></script>
     <script src="js/Street.js"></script>
   </body>
 </html>
