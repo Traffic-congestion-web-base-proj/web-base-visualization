@@ -38,9 +38,10 @@ body, html {
   overflow: hidden;
 }
 
+/* 접기/펼치기 버튼 */
 #toggle-sidebar {
-  position: absolute;
-  top: 0;
+  position: fixed;
+  top: 10px;
   right: 10px;
   background: #007bff;
   color: white;
@@ -88,28 +89,24 @@ body, html {
 }
 
 #controls {
-  position: absolute;
+  position: fixed;
   bottom: 10px;
-  left: 50%;
-  transform: translateX(-50%);
+  left: 10px;
+  z-index: 1000;
   background: white;
   padding: 10px;
   border-radius: 5px;
-  box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
-  z-index: 1000;
-  display: flex;
-  align-items: center;
+  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.5);
 }
 
 #timeSlider {
-  margin-left: 10px;
+  width: 300px;
 }
 
-
-#sidebar.collapsed {
-  height: 0;
-  padding: 0;
-  overflow: hidden;
+#timeLabel {
+  display: block;
+  margin-top: 5px;
+  font-weight: bold;
 }
 
 #toggle-sidebar {
@@ -128,4 +125,62 @@ body, html {
 
 #toggle-sidebar:hover {
   background-color: #0056b3;
+}
+
+/* 모달 창 */
+#modal {
+  position: fixed;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  background: white;
+  padding: 20px;
+  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.5);
+  z-index: 1000;
+  border-radius: 8px;
+  text-align: center;
+  max-width: 400px;
+  width: 90%;
+}
+
+.modal-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: rgba(0, 0, 0, 0.3);
+  z-index: 999;
+}
+
+#modal button {
+  margin: 10px 5px 0;
+  padding: 10px 20px;
+  border: none;
+  border-radius: 4px;
+  cursor: pointer;
+  background: #007bff;
+  color: white;
+  font-size: 14px;
+  transition: background-color 0.3s;
+}
+
+#modal button:hover {
+  background-color: #0056b3;
+}
+
+/* 초기화 버튼 */
+.reset-button {
+  background-color: #f44336;
+  color: white;
+  border: none;
+  border-radius: 4px;
+  padding: 8px 12px;
+  cursor: pointer;
+  font-size: 14px;
+  transition: background-color 0.3s;
+}
+
+.reset-button:hover {
+  background-color: #c62828;
 }
