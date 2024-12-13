@@ -10,6 +10,10 @@ let previousDensityMap = new Map(); // 통행료 부과 전 밀도 저장
 const timeSlider = document.getElementById("timeSlider");
 const timeLabel = document.getElementById("timeLabel");
 
+function calculateWeight(zoomLevel) {
+  return Math.max(1, (zoomLevel - 14) * 3); // 최소값 1, 줌 레벨에 따라 증가
+}
+
 // 초를 HH:MM 형식으로 변환하는 유틸리티 함수
 function secondsToHHMM(seconds) {
   const h = Math.floor(seconds / 3600)
@@ -44,9 +48,7 @@ function loadDensityData(densityPath, isAfterFee = false) {
 
         // 선택된 시간대 데이터 필터링
         const filteredDensityData = densityData.filter(
-          (row) =>
-            parseFloat(row.interval_begin) === selectedTime &&
-            parseFloat(row.interval_end) === adjustedNextTime
+          (row) => parseFloat(row.interval_begin) === selectedTime && parseFloat(row.interval_end) === adjustedNextTime
         );
 
         updateRoads(filteredDensityData, isAfterFee);
@@ -103,7 +105,7 @@ function updateRoads(filteredDensityData, isAfterFee = false) {
 
         const polyline = new L.polyline(coordinates, {
           color: color,
-          weight: 3,
+          weight: calculateWeight(map.getZoom()),
           customData: {
             road_name: roadName,
             road_id: roadId,
@@ -124,12 +126,24 @@ function updateRoads(filteredDensityData, isAfterFee = false) {
             this.closePopup();
           });
 
-          polyline.on("click", function (e) {
-            const { road_id } = this.options.customData;
-            showGraphs(road_id); // 그래프를 표시하는 함수 호출
-          });
+        polyline.on("click", function (e) {
+          const { road_id } = this.options.customData;
+          showGraphs(road_id); // 그래프를 표시하는 함수 호출
+        });
 
         featureGroup.addLayer(polyline);
+      });
+
+      map.on("zoomend", () => {
+        const currentZoom = map.getZoom(); // 현재 줌 레벨 가져오기
+        featureGroup.eachLayer((layer) => {
+          if (layer instanceof L.Polyline) {
+            // 줌 레벨에 따른 weight 설정
+            layer.setStyle({
+              weight: calculateWeight(currentZoom),
+            });
+          }
+        });
       });
     })
     .catch((error) => console.error("Error fetching edge data:", error));
