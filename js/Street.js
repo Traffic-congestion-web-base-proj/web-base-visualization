@@ -91,7 +91,7 @@ function updateRoads(filteredDensityData) {
 
         const polyline = new L.polyline(coordinates, {
           color: color,
-          weight: 3,
+          weight: calculateWeight(map.getZoom()),
           customData: {
             road_name: roadName,
             road_id: roadId,
@@ -108,6 +108,19 @@ function updateRoads(filteredDensityData) {
 
         featureGroup.addLayer(polyline);
       });
+      map.on("zoomend", () => {
+        const currentZoom = map.getZoom();
+        featureGroup.eachLayer((layer) => {
+          if (layer instanceof L.Polyline) {
+            layer.setStyle({ weight: calculateWeight(currentZoom) });
+          }
+        });
+      });
     })
     .catch((error) => console.error("Error fetching edge data:", error));
+}
+
+// 줌 레벨에 따라 도로 weight 계산 함수
+function calculateWeight(zoomLevel) {
+  return Math.max(1, (zoomLevel - 14) * 3);
 }
