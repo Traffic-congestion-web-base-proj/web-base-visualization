@@ -80,7 +80,7 @@ function updateRoads(filteredDensityData, isAfterFee = false) {
     previousDensityMap = new Map(densityMap); // 복사 저장
   }
 
-  // 기존 레이어를 업데이트하거나 새로 추가
+  // 기존 레이어를 업데이트
   featureGroup.eachLayer((layer) => {
     if (layer instanceof L.Polyline) {
       const roadId = layer.options.customData.road_id;
@@ -89,12 +89,8 @@ function updateRoads(filteredDensityData, isAfterFee = false) {
 
       const color = currentDensity < 1 ? "green" : currentDensity <= 100 ? "orange" : "red";
 
-      // 레이어 스타일 업데이트
-      layer.setStyle({
-        color: color,
-      });
-
-      // 팝업 업데이트
+      // 레이어 스타일 및 팝업 업데이트
+      layer.setStyle({ color: color });
       layer.bindPopup(
         `도로명: ${layer.options.customData.road_name}<br>
         LINK_ID: ${roadId}<br>
@@ -102,12 +98,11 @@ function updateRoads(filteredDensityData, isAfterFee = false) {
         ${isAfterFee ? `통행료 부과 후 밀도: ${currentDensity.toFixed(2)}` : ""}`
       );
 
-      // 기존 레이어 처리 완료 표시
-      densityMap.delete(roadId);
+      densityMap.delete(roadId); // 이미 처리한 도로 제거
     }
   });
 
-  // 새로 추가해야 할 레이어만 처리
+  // 새로 추가할 폴리라인 처리
   fetch(edgePath)
     .then((res) => res.text())
     .then((edgeText) => {
@@ -141,46 +136,47 @@ function updateRoads(filteredDensityData, isAfterFee = false) {
             previous_density: previousDensity,
             current_density: isAfterFee ? currentDensity : null,
           },
-        })
-          .bindPopup(
-            `도로명: ${roadName}<br>
-            LINK_ID: ${roadId}<br>
-            통행료 부과 전 밀도: ${previousDensity.toFixed(2)}<br>
-            ${isAfterFee ? `통행료 부과 후 밀도: ${currentDensity.toFixed(2)}` : ""}`
-          )
-          .on("mouseover", function () {
-            this.openPopup();
-          })
-          .on("mouseout", function () {
-            this.closePopup();
-          });
-
-        polyline.on("click", function (e) {
-          const { road_id } = this.options.customData;
-          showGraphs(road_id); // 그래프를 표시하는 함수 호출
         });
 
+        // 팝업 설정
+        polyline.bindPopup(
+          `도로명: ${roadName}<br>
+          LINK_ID: ${roadId}<br>
+          통행료 부과 전 밀도: ${previousDensity.toFixed(2)}<br>
+          ${isAfterFee ? `통행료 부과 후 밀도: ${currentDensity.toFixed(2)}` : ""}`
+        );
+
+        // 이벤트 설정
+        polyline.on("mouseover", function () {
+          this.openPopup();
+        });
+        polyline.on("mouseout", function () {
+          this.closePopup();
+        });
+        polyline.on("click", function () {
+          const { road_id } = this.options.customData;
+          showGraphs(road_id);
+        });
+
+        // 지도에 추가
         featureGroup.addLayer(polyline);
       });
 
+      // 줌 이벤트 처리
       map.on("zoomend", () => {
         const currentZoom = map.getZoom();
-
         featureGroup.eachLayer((layer) => {
           if (layer instanceof L.Polyline) {
-            const newWeight = calculateWeight(currentZoom);
-
-            if (layer.options.weight !== newWeight) {
-              layer.setStyle({
-                weight: newWeight,
-              });
-            }
+            layer.setStyle({
+              weight: calculateWeight(currentZoom),
+            });
           }
         });
       });
     })
     .catch((error) => console.error("Error fetching edge data:", error));
 }
+
 
 // 초기 밀도 데이터 로드
 loadDensityData(densityPath);
