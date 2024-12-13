@@ -51,6 +51,26 @@ function initSidebar(features) {
 
     regionList.appendChild(listItem);
   });
+
+  // 접기/펼치기 버튼 추가
+  const toggleButton = document.getElementById("toggle-sidebar");
+  toggleButton.addEventListener("click", () => {
+    const sidebar = document.getElementById("sidebar");
+    const mapElement = document.getElementById("map");
+
+    // 사이드바 상태 토글
+    const isCollapsed = sidebar.classList.toggle("collapsed");
+    toggleButton.textContent = isCollapsed ? "펼치기" : "접기";
+
+    // 지도 크기 동기화
+    if (isCollapsed) {
+      mapElement.style.top = "0";
+      mapElement.style.height = "100%";
+    } else {
+      mapElement.style.top = "60px";
+      mapElement.style.height = "calc(100% - 60px)";
+    }
+  });
 }
 
 // 구역 선택/해제 토글 함수
