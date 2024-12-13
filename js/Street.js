@@ -164,13 +164,17 @@ function updateRoads(filteredDensityData, isAfterFee = false) {
       });
 
       map.on("zoomend", () => {
-        const currentZoom = map.getZoom(); // 현재 줌 레벨 가져오기
+        const currentZoom = map.getZoom();
+
         featureGroup.eachLayer((layer) => {
           if (layer instanceof L.Polyline) {
-            // 줌 레벨에 따른 weight 설정
-            layer.setStyle({
-              weight: calculateWeight(currentZoom),
-            });
+            const newWeight = calculateWeight(currentZoom);
+
+            if (layer.options.weight !== newWeight) {
+              layer.setStyle({
+                weight: newWeight,
+              });
+            }
           }
         });
       });
