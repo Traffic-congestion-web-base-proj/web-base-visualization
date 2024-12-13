@@ -14,7 +14,7 @@ fetch(geoJsonPath)
       }),
       onEachFeature: (feature, layer) => {
         const regionName = feature.properties.nhood || "Unknown";
-
+        console.log(regionName);
         // 마우스 이벤트
         layer
           .on("mouseover", function () {
