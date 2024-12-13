@@ -27,6 +27,7 @@ function secondsToHHMM(seconds) {
 
 // 밀도 데이터 로드 및 슬라이더 이벤트 처리
 function loadDensityData(densityPath, isAfterFee = false) {
+  console.log("loadDensityData");
   fetch(densityPath)
     .then((res) => res.text())
     .then((densityText) => {
@@ -62,29 +63,56 @@ function loadDensityData(densityPath, isAfterFee = false) {
 
 // 도로 데이터 업데이트 함수
 function updateRoads(filteredDensityData, isAfterFee = false) {
-  featureGroup.clearLayers(); // 기존 도로 제거
+  console.log("updateRoads");
 
+  // 밀도 데이터를 LINK_ID로 매핑
+  const densityMap = new Map();
+  filteredDensityData.forEach((row) => {
+    const linkId = row.id.toString().trim();
+    const density = parseFloat(row.density);
+    if (!isNaN(density)) {
+      densityMap.set(linkId, density);
+    }
+  });
+
+  // 통행료 부과 전 밀도 저장
+  if (!isAfterFee) {
+    previousDensityMap = new Map(densityMap); // 복사 저장
+  }
+
+  // 기존 레이어를 업데이트하거나 새로 추가
+  featureGroup.eachLayer((layer) => {
+    if (layer instanceof L.Polyline) {
+      const roadId = layer.options.customData.road_id;
+      const previousDensity = previousDensityMap.get(roadId) || 0;
+      const currentDensity = densityMap.get(roadId) || 0;
+
+      const color = currentDensity < 1 ? "green" : currentDensity <= 100 ? "orange" : "red";
+
+      // 레이어 스타일 업데이트
+      layer.setStyle({
+        color: color,
+      });
+
+      // 팝업 업데이트
+      layer.bindPopup(
+        `도로명: ${layer.options.customData.road_name}<br>
+        LINK_ID: ${roadId}<br>
+        통행료 부과 전 밀도: ${previousDensity.toFixed(2)}<br>
+        ${isAfterFee ? `통행료 부과 후 밀도: ${currentDensity.toFixed(2)}` : ""}`
+      );
+
+      // 기존 레이어 처리 완료 표시
+      densityMap.delete(roadId);
+    }
+  });
+
+  // 새로 추가해야 할 레이어만 처리
   fetch(edgePath)
     .then((res) => res.text())
     .then((edgeText) => {
       const edgeData = d3.csvParse(edgeText);
 
-      // 밀도 데이터를 LINK_ID로 매핑
-      const densityMap = new Map();
-      filteredDensityData.forEach((row) => {
-        const linkId = row.id.toString().trim();
-        const density = parseFloat(row.density);
-        if (!isNaN(density)) {
-          densityMap.set(linkId, density);
-        }
-      });
-
-      // 통행료 부과 전 밀도 저장
-      if (!isAfterFee) {
-        previousDensityMap = new Map(densityMap); // 복사 저장
-      }
-
-      // 도로 데이터 시각화
       edgeData.forEach((row) => {
         if (!row.geometry || !row.geometry.startsWith("LINESTRING")) return;
 
@@ -97,9 +125,10 @@ function updateRoads(filteredDensityData, isAfterFee = false) {
         const roadName = row.ROAD_NAME || "도로명없음";
         const roadId = row.LINK_ID.trim();
 
-        // 밀도 값 가져오기
-        const previousDensity = previousDensityMap.get(roadId) || 0; // 통행료 부과 전 밀도
-        const currentDensity = densityMap.get(roadId) || 0; // 현재 밀도
+        if (!densityMap.has(roadId)) return;
+
+        const previousDensity = previousDensityMap.get(roadId) || 0;
+        const currentDensity = densityMap.get(roadId) || 0;
 
         const color = currentDensity < 1 ? "green" : currentDensity <= 100 ? "orange" : "red";
 
