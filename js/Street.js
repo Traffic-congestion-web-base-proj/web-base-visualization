@@ -124,6 +124,11 @@ function updateRoads(filteredDensityData, isAfterFee = false) {
             this.closePopup();
           });
 
+          polyline.on("click", function (e) {
+            const { road_id } = this.options.customData;
+            showGraphs(road_id); // 그래프를 표시하는 함수 호출
+          });
+
         featureGroup.addLayer(polyline);
       });
     })
