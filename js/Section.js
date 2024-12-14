@@ -1,36 +1,47 @@
 import { updateRoadsWithNewData } from "./Street.js";
 
 const geoJsonPath = "./data/divide.geojson";
-let densityPath = "./data/data_feeBefore.csv"; // 초기 밀도 데이터 경로
+let previousdensitypath = "./data/data_feeBefore.csv"; // 초기 밀도 데이터 경로
 const selectedRegions = {}; // 선택된 구역 상태 저장 객체
 let geoJsonLayer; // GeoJSON 레이어 참조
 
-fetch(geoJsonPath)
-  .then((response) => {
-    if (!response.ok) throw new Error("Failed to fetch GeoJSON");
-    return response.json();
-  })
-  .then((geoJson) => {
-    // GeoJSON 데이터로 지도 초기화
-    geoJsonLayer = L.geoJson(geoJson, {
-      style: (feature) => ({
-        color: "skyblue",
-        fillColor: "rgba(0, 0, 255, 0.3)",
-        weight: 1,
-      }),
-      onEachFeature: (feature, layer) => {
-        const regionName = feature.properties.nhood || "Unknown";
-        layer._regionName = regionName; // 레이어에 구역 이름 저장
+// 지도에 추가된 폴리라인 관리를 위한 Feature Group
+let featureGroup;
 
-        // 구역 스타일 초기화
-        updateRegionStyle(regionName, layer);
-      },
-    }).addTo(map);
+// 지도 및 FeatureGroup 초기화
+window.onload = () => {
+  featureGroup = L.featureGroup().addTo(map); // 지도에 추가
+  initializeGeoJson(); // GeoJSON 데이터 초기화
+};
 
-    // 구역 목록 초기화
-    initRegionList(geoJson.features);
-  })
-  .catch((error) => console.error("Error loading GeoJSON:", error));
+// GeoJSON 데이터 초기화
+function initializeGeoJson() {
+  fetch(geoJsonPath)
+    .then((response) => {
+      if (!response.ok) throw new Error("Failed to fetch GeoJSON");
+      return response.json();
+    })
+    .then((geoJson) => {
+      geoJsonLayer = L.geoJson(geoJson, {
+        style: (feature) => ({
+          color: "skyblue",
+          fillColor: "rgba(0, 0, 255, 0.3)",
+          weight: 1,
+        }),
+        onEachFeature: (feature, layer) => {
+          const regionName = feature.properties.nhood || "Unknown";
+          layer._regionName = regionName; // 레이어에 구역 이름 저장
+
+          // 구역 스타일 초기화
+          updateRegionStyle(regionName, layer);
+        },
+      }).addTo(map);
+
+      // 구역 목록 초기화
+      initRegionList(geoJson.features);
+    })
+    .catch((error) => console.error("Error loading GeoJSON:", error));
+}
 
 // 구역 목록 초기화 함수
 function initRegionList(features) {
@@ -96,20 +107,54 @@ function initRegionList(features) {
   });
 }
 
-// 초기화 버튼 클릭 시 실행되는 함수
+// 초기화 함수
 function resetRoadsToInitialState() {
-  densityPath = "./data/data_feeBefore.csv"; // 초기 상태로 데이터 경로 변경
-  updateRoadsWithNewData(densityPath); // 초기 데이터로 도로 업데이트
+  if (!featureGroup) {
+    console.error("FeatureGroup이 초기화되지 않았습니다.");
+    return;
+  }
+
+  // 모든 기존 레이어 제거
+  featureGroup.clearLayers();
+
+  // 초기 밀도 경로로 복구
+  updateRoadsWithNewData("./data/data_feeBefore.csv",false);
+
+  // 선택된 구역 초기화
+  Object.keys(selectedRegions).forEach((region) => {
+    delete selectedRegions[region]; // 선택된 구역 상태 초기화
+  });
+
+  // 모든 구역 스타일 초기화
+  geoJsonLayer.eachLayer((layer) => {
+    updateRegionStyle(layer._regionName, layer);
+  });
+
+  // 팝업 초기화: "통행료 부과 전" 상태로 복원
+  featureGroup.eachLayer((layer) => {
+    if (layer instanceof L.Polyline) {
+      const roadId = layer.options.customData.road_id;
+      const previousDensity = previousDensityMap.get(roadId) || 0;
+
+      // 팝업 내용을 "통행료 부과 전" 데이터로 설정
+      layer.bindPopup(
+        `도로명: ${layer.options.customData.road_name}<br>
+        LINK_ID: ${roadId}<br>
+        혼잡도: ${previousDensity.toFixed(2)}
+        평균 속도: ${previousData.speed ? `${previousData.speed.toFixed(2)} km/h` : "데이터 없음"}<br>
+        진입 차량 수: ${previousData.entered ? `${previousData.entered}` : "데이터 없음"}`
+      );
+    }
+  });
+
   alert("도로 상태가 초기화되었습니다.");
 }
 
 // 모달 창 표시 함수
 function showModal(regionName) {
-  // 데이터 파일 경로 생성
   const dataFileName = `data_${regionName.replace(/\s/g, "")}.csv`;
   const dataFilePath = `./data/${dataFileName}`;
 
-  // 모달 HTML 생성
   const modalHtml = `
     <div id="modal" style="
       position: fixed;
@@ -138,9 +183,18 @@ function showModal(regionName) {
 
   document.body.insertAdjacentHTML("beforeend", modalHtml);
 
-  // 모달 버튼 이벤트
   document.getElementById("modal-yes").addEventListener("click", () => {
-    updateRoadsWithNewData(dataFilePath); // 도로 데이터 업데이트
+    // 선택된 구역을 저장
+    selectedRegions[regionName] = true;
+
+    // 구역 스타일 업데이트
+    geoJsonLayer.eachLayer((layer) => {
+      if (layer._regionName === regionName) {
+        updateRegionStyle(regionName, layer);
+      }
+    });
+    
+    updateRoadsWithNewData(dataFilePath);
     alert(`${regionName} 구역에 통행료를 부과했습니다.`);
     closeModal();
   });
