@@ -179,7 +179,9 @@ function updateRoads(filteredDensityData, isAfterFee = false) {
         });
         polyline.on("click", function () {
           const { road_id } = this.options.customData;
-          console.log(`Road clicked: ${road_id}`);
+          // CustomEvent로 roadId 전달
+          const event = new CustomEvent("roadSelected", { detail: { roadId: road_id } });
+          window.dispatchEvent(event);
         });
         
         // featureGroup에 추가

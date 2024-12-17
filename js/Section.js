@@ -130,6 +130,10 @@ function resetRoadsToInitialState() {
     updateRegionStyle(layer._regionName, layer);
   });
 
+  // regionName을 null로 설정하는 이벤트 디스패치
+  const event = new CustomEvent("regionSelected", { detail: { regionName: null } });
+  window.dispatchEvent(event);
+
   // 팝업 초기화: "통행료 부과 전" 상태로 복원
   featureGroup.eachLayer((layer) => {
     if (layer instanceof L.Polyline) {
@@ -196,6 +200,10 @@ function showModal(regionName) {
     
     updateRoadsWithNewData(dataFilePath);
     alert(`${regionName} 구역에 통행료를 부과했습니다.`);
+
+    // CustomEvent로 regionName 전달
+    const event = new CustomEvent("regionSelected", { detail: { regionName } });
+    window.dispatchEvent(event);
     closeModal();
   });
 
