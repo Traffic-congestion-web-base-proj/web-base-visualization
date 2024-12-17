@@ -188,11 +188,11 @@ body, html {
 #graphbar{
   position: fixed;
   overflow: scroll;
-  top: 1%;
-  right: -1000px;
+  top: 60px;
+  right: 5px;
   background: rgb(255, 255, 255);
-  width: 30%;
-  height: 98%;
+  width: 510px;
+  height: 90%;
   z-index: 99;
   transition: right 1s;
 }
@@ -200,32 +200,20 @@ body, html {
   display: none;
 }
 
-#button_out{ /*메뉴버튼*/
+#menu_button{ /*메뉴버튼*/
   position: absolute;
   top: 45%;
-  right: 0PX;
-
+  right: 510px;
   width: 40px;
   height: 50px;
 
+  cursor: pointer;
   border: none;
   background-color: white; /* 배경색 흰색으로 설정 */
   font-size: 30px; /* 글자 크기 */
   font-weight: bold;
 
-  transition: right 0.5s;
-}
-#button_in { /*메뉴숨김버튼*/
-  position: absolute;
-  top: 1%;
-  left: 1%;
-  width: 30px;
-  height: 30px;
-
-  border: none;
-  background-color: white; /* 배경색 흰색으로 설정 */
-  font-size: 30px; /* 글자 크기 */
-  font-weight: bold;
+  transition: right 1s;
 }
 
 #graphs {
@@ -237,6 +225,7 @@ body, html {
   display: flex;
   justify-content: space-around;
 }
+
 #speedGraph, #densityGraph {
   width: 45%;
   height: 300px;

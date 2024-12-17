@@ -1,23 +1,26 @@
-let menu;
-let button;
+function menuin_out(){
+    const menu=document.getElementById("graphbar");
+    const button=document.getElementById("menu_button");
 
-function menuout(){
-    menu=document.getElementById("graphbar");
-    menu.style.right="1%";
-    menu.style.position="absolute"
-
-    button=document.getElementById("button_out");
-    button.style.right="-100%";
+    if (menu.style.right == "5px") {
+        menu.style.right="-510px";
+        button.style.right="0px";
+        button.textContent="<"
+    }
+    else {
+        menu.style.right="5px";
+        button.style.right="515px";
+        button.textContent=">"
+    }
 }
 
-function menuin(){
-    menu=document.getElementById("graphbar");
-    menu.style.right="-1000px";
-    menu.style.position="fixed"
+// function menuin(){
+//     menu=document.getElementById("graphbar");
+//     menu.style.right="-510px";
 
-    button=document.getElementById("button_out");
-    button.style.right="0px";
-}
+//     button=document.getElementById("button_out");
+//     button.style.right="0px";
+// }
 
 // 선택된 도로 ID로 그래프를 생성
 function onRoadSelected(roadId) {
