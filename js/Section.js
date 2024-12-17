@@ -4,6 +4,7 @@ const geoJsonPath = "./data/divide.geojson";
 let previousdensitypath = "./data/data_feeBefore.csv"; // 초기 밀도 데이터 경로
 const selectedRegions = {}; // 선택된 구역 상태 저장 객체
 let geoJsonLayer; // GeoJSON 레이어 참조
+let selectedRegionName = null; // 하나의 선택된 구역만 저장
 
 // 지도에 추가된 폴리라인 관리를 위한 Feature Group
 let featureGroup;
@@ -155,7 +156,13 @@ function resetRoadsToInitialState() {
 }
 
 // 모달 창 표시 함수
+
+// 모달 창 표시 함수
 function showModal(regionName) {
+  if (selectedRegionName === regionName) {
+    // 이미 선택된 구역을 클릭한 경우 아무런 동작을 하지 않음
+    return;
+  }
   const dataFileName = `data_${regionName.replace(/\s/g, "")}.csv`;
   const dataFilePath = `./data/${dataFileName}`;
 
@@ -188,22 +195,31 @@ function showModal(regionName) {
   document.body.insertAdjacentHTML("beforeend", modalHtml);
 
   document.getElementById("modal-yes").addEventListener("click", () => {
-    // 선택된 구역을 저장
-    selectedRegions[regionName] = true;
+    // 이전에 선택된 구역이 있으면 초기화
+    if (selectedRegionName) {
+      geoJsonLayer.eachLayer((layer) => {
+        if (layer._regionName === selectedRegionName) {
+          updateRegionStyle(selectedRegionName, layer, false); // 이전 선택 구역 스타일 초기화
+        }
+      });
+    }
 
-    // 구역 스타일 업데이트
+    // 새 구역 선택 및 스타일 적용
+    selectedRegionName = regionName;
     geoJsonLayer.eachLayer((layer) => {
       if (layer._regionName === regionName) {
-        updateRegionStyle(regionName, layer);
+        updateRegionStyle(regionName, layer, true); // 새 선택 구역 스타일 적용
       }
     });
-    
+
+    // 데이터 업데이트
     updateRoadsWithNewData(dataFilePath);
     alert(`${regionName} 구역에 통행료를 부과했습니다.`);
 
     // CustomEvent로 regionName 전달
     const event = new CustomEvent("regionSelected", { detail: { regionName } });
     window.dispatchEvent(event);
+
     closeModal();
   });
 
@@ -223,7 +239,7 @@ function closeModal() {
 // 구역 강조 표시 함수
 function highlightRegion(regionName) {
   geoJsonLayer.eachLayer((layer) => {
-    if (layer._regionName === regionName) {
+    if (layer._regionName === regionName && selectedRegionName !== regionName) {
       layer.setStyle({ fillColor: "rgba(0, 255, 0, 0.5)" });
       layer.bringToFront();
     }
@@ -233,15 +249,15 @@ function highlightRegion(regionName) {
 // 구역 강조 해제 함수
 function resetHighlightRegion(regionName) {
   geoJsonLayer.eachLayer((layer) => {
-    if (layer._regionName === regionName && !selectedRegions[regionName]) {
+    if (layer._regionName === regionName && selectedRegionName !== regionName) {
       layer.setStyle({ fillColor: "rgba(0, 0, 255, 0.3)" });
     }
   });
 }
 
 // 구역 스타일 업데이트 함수
-function updateRegionStyle(regionName, layer) {
+function updateRegionStyle(regionName, layer, isSelected) {
   layer.setStyle({
-    fillColor: selectedRegions[regionName] ? "rgba(255, 0, 0, 0.5)" : "rgba(0, 0, 255, 0.3)",
+    fillColor: isSelected ? "rgba(255, 0, 0, 0.5)" : "rgba(0, 0, 255, 0.3)",
   });
 }
