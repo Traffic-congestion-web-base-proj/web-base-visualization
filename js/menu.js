@@ -6,14 +6,14 @@ function menuin_out() {
   console.log(button);
 
   if (toggle == true) {
-    menu.style.right = "-510px";
+    menu.style.right = "-580px";
     button.style.right = "0px";
     button.value = "<";
 
     toggle = false;
   } else {
     menu.style.right = "5px";
-    button.style.right = "510px";
+    button.style.right = "585px";
     button.value = ">";
 
     toggle = true;

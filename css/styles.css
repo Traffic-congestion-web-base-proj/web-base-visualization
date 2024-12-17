@@ -189,9 +189,9 @@ body, html {
   position: fixed;
   overflow: scroll;
   top: 60px;
-  right: -510px;
+  right: -580px;
   background: rgb(255, 255, 255);
-  width: 510px;
+  width: 580px;
   height: 90%;
   z-index: 99;
   transition: right 0.3s ease-in-out;
