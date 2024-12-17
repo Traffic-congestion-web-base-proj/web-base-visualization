@@ -3,8 +3,7 @@ var isRoadHovered = false; // 도로 위에 마우스가 있는지 여부 플래
 
 // 도로 및 밀도 데이터 경로
 const edgePath = "./data/gangnam_edge.csv";
-let densityPath = "./data/data_feeBefore.csv"; // 초기 밀도 데이터 경로
-let previousDensityMap = new Map(); // 통행료 부과 전 밀도 저장
+let previousDensityPath = "./data/data_feeBefore.csv"; // 초기 밀도 데이터 경로
 
 // 슬라이더 요소
 const timeSlider = document.getElementById("timeSlider");
@@ -26,9 +25,9 @@ function secondsToHHMM(seconds) {
 }
 
 // 밀도 데이터 로드 및 슬라이더 이벤트 처리
-function loadDensityData(densityPath, isAfterFee = false) {
+function loadDensityData(previousDensityPath, isAfterFee = false) {
   console.log("loadDensityData");
-  fetch(densityPath)
+  fetch(previousDensityPath)
     .then((res) => res.text())
     .then((densityText) => {
       const densityData = d3.csvParse(densityText);
@@ -61,7 +60,6 @@ function loadDensityData(densityPath, isAfterFee = false) {
     .catch((error) => console.error("Error fetching density data:", error));
 }
 
-// 도로 데이터 업데이트 함수
 function updateRoads(filteredDensityData, isAfterFee = false) {
   console.log("updateRoads");
 
@@ -70,8 +68,10 @@ function updateRoads(filteredDensityData, isAfterFee = false) {
   filteredDensityData.forEach((row) => {
     const linkId = row.id.toString().trim();
     const density = parseFloat(row.density);
+    const speed = parseFloat(row.speed);
+    const entered = parseInt(row.entered, 10);
     if (!isNaN(density)) {
-      densityMap.set(linkId, density);
+      densityMap.set(linkId, { density, speed, entered });
     }
   });
 
@@ -80,34 +80,36 @@ function updateRoads(filteredDensityData, isAfterFee = false) {
     previousDensityMap = new Map(densityMap); // 복사 저장
   }
 
-  // 기존 레이어를 업데이트하거나 새로 추가
+  // 기존 레이어를 업데이트
   featureGroup.eachLayer((layer) => {
     if (layer instanceof L.Polyline) {
       const roadId = layer.options.customData.road_id;
-      const previousDensity = previousDensityMap.get(roadId) || 0;
-      const currentDensity = densityMap.get(roadId) || 0;
+      const previousData = previousDensityMap.get(roadId) || { density: 0, speed: null, entered: null };
+      const currentData = densityMap.get(roadId) || { density: 0, speed: null, entered: null };
 
-      const color = currentDensity < 1 ? "green" : currentDensity <= 100 ? "orange" : "red";
+      const color = currentData.density < 1 ? "green" : currentData.density <= 100 ? "orange" : "red";
 
-      // 레이어 스타일 업데이트
-      layer.setStyle({
-        color: color,
-      });
-
-      // 팝업 업데이트
+      // 레이어 스타일 및 팝업 업데이트
+      layer.setStyle({ color: color });
       layer.bindPopup(
-        `도로명: ${layer.options.customData.road_name}<br>
-        LINK_ID: ${roadId}<br>
-        통행료 부과 전 밀도: ${previousDensity.toFixed(2)}<br>
-        ${isAfterFee ? `통행료 부과 후 밀도: ${currentDensity.toFixed(2)}` : ""}`
+        isAfterFee
+          ? // 통행료 부과 후 팝업 내용
+            `도로명: ${layer.options.customData.road_name}<br>
+            LINK_ID: ${roadId}<br>
+            혼잡도: ${currentData.density.toFixed(2)}<br>
+            평균 속도: ${currentData.speed ? `${currentData.speed.toFixed(2)} km/h` : "데이터 없음"}<br>
+            진입 차량 수: ${currentData.entered ? `${currentData.entered}` : "데이터 없음"}`
+          : // 통행료 부과 전 팝업 내용
+            `도로명: ${layer.options.customData.road_name}<br>
+            LINK_ID: ${roadId}<br>
+            밀도: ${previousData.density.toFixed(2)}<br>
+            평균 속도: ${previousData.speed ? `${previousData.speed.toFixed(2)} km/h` : "데이터 없음"}<br>
+            진입 차량 수: ${previousData.entered ? `${previousData.entered}` : "데이터 없음"}`
       );
-
-      // 기존 레이어 처리 완료 표시
-      densityMap.delete(roadId);
     }
   });
 
-  // 새로 추가해야 할 레이어만 처리
+  // 새로 추가할 폴리라인 처리
   fetch(edgePath)
     .then((res) => res.text())
     .then((edgeText) => {
@@ -127,10 +129,10 @@ function updateRoads(filteredDensityData, isAfterFee = false) {
 
         if (!densityMap.has(roadId)) return;
 
-        const previousDensity = previousDensityMap.get(roadId) || 0;
-        const currentDensity = densityMap.get(roadId) || 0;
+        const previousData = previousDensityMap.get(roadId) || { density: 0, speed: null, entered: null };
+        const currentData = densityMap.get(roadId) || { density: 0, speed: null, entered: null };
 
-        const color = currentDensity < 1 ? "green" : currentDensity <= 100 ? "orange" : "red";
+        const color = currentData.density < 1 ? "green" : currentData.density <= 100 ? "orange" : "red";
 
         const polyline = new L.polyline(coordinates, {
           color: color,
@@ -138,36 +140,59 @@ function updateRoads(filteredDensityData, isAfterFee = false) {
           customData: {
             road_name: roadName,
             road_id: roadId,
-            previous_density: previousDensity,
-            current_density: isAfterFee ? currentDensity : null,
+            previous_density: previousData.density,
+            current_density: isAfterFee ? currentData.density : null,
+            previous_speed: previousData.speed,
+            current_speed: currentData.speed,
+            previous_entered: previousData.entered,
+            current_entered: currentData.entered,
           },
-        })
-          .bindPopup(
-            `도로명: ${roadName}<br>
-            LINK_ID: ${roadId}<br>
-            통행료 부과 전 밀도: ${previousDensity.toFixed(2)}<br>
-            ${isAfterFee ? `통행료 부과 후 밀도: ${currentDensity.toFixed(2)}` : ""}`
-          )
-          .on("mouseover", function () {
-            this.openPopup();
-          })
-          .on("mouseout", function () {
-            this.closePopup();
-          });
-
-        polyline.on("click", function (e) {
-          const { road_id } = this.options.customData;
-          showGraphs(road_id); // 그래프를 표시하는 함수 호출
+          pane: "overlayPane", // 클릭 가능 영역
+          interactive: true, // 클릭 활성화
         });
-
+        
+        // 팝업 설정
+        polyline.bindPopup(
+          isAfterFee
+            ? `도로명: ${roadName}<br>
+              LINK_ID: ${roadId}<br>
+              밀도: ${currentData.density.toFixed(2)}<br>
+              평균 속도: ${currentData.speed ? `${currentData.speed.toFixed(2)} km/h` : "데이터 없음"}<br>
+              진입 차량 수: ${currentData.entered ? `${currentData.entered}` : "데이터 없음"}`
+            : `도로명: ${roadName}<br>
+              LINK_ID: ${roadId}<br>
+              혼잡도: ${previousData.density.toFixed(2)}<br>
+              평균 속도: ${previousData.speed ? `${previousData.speed.toFixed(2)} km/h` : "데이터 없음"}<br>
+              진입 차량 수: ${previousData.entered ? `${previousData.entered}` : "데이터 없음"}`
+        );
+        
+        // 이벤트 설정
+        polyline.on("mouseover", function () {
+          if (!this.isPopupOpen()) {
+            this.openPopup();
+          }
+        });
+        polyline.on("mouseout", function () {
+          if (this.isPopupOpen()) {
+            this.closePopup();
+          }
+        });
+        polyline.on("click", function () {
+          const { road_id } = this.options.customData;
+          // CustomEvent로 roadId 전달
+          const event = new CustomEvent("roadSelected", { detail: { roadId: road_id } });
+          window.dispatchEvent(event);
+        });
+        
+        // featureGroup에 추가
         featureGroup.addLayer(polyline);
+        
       });
 
       map.on("zoomend", () => {
-        const currentZoom = map.getZoom(); // 현재 줌 레벨 가져오기
+        const currentZoom = map.getZoom();
         featureGroup.eachLayer((layer) => {
           if (layer instanceof L.Polyline) {
-            // 줌 레벨에 따른 weight 설정
             layer.setStyle({
               weight: calculateWeight(currentZoom),
             });
@@ -178,8 +203,9 @@ function updateRoads(filteredDensityData, isAfterFee = false) {
     .catch((error) => console.error("Error fetching edge data:", error));
 }
 
+
 // 초기 밀도 데이터 로드
-loadDensityData(densityPath);
+loadDensityData(previousDensityPath);
 
 // 밀도 데이터 변경 함수 (초기화 및 구역 변경에 사용)
 function updateRoadsWithNewData(newDensityPath) {
@@ -187,3 +213,4 @@ function updateRoadsWithNewData(newDensityPath) {
 }
 
 export { updateRoadsWithNewData };
+export let previousDensityMap = new Map();
