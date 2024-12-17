@@ -189,7 +189,7 @@ body, html {
   position: fixed;
   overflow: scroll;
   top: 60px;
-  right: 5px;
+  right: -510px;
   background: rgb(255, 255, 255);
   width: 510px;
   height: 90%;
@@ -203,7 +203,7 @@ body, html {
 #menu_button{ /*메뉴버튼*/
   position: absolute;
   top: 45%;
-  right: 515px;
+  right: 0px;
   width: 40px;
   height: 50px;
 
