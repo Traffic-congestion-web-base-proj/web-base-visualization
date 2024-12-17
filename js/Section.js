@@ -135,6 +135,11 @@ function resetRoadsToInitialState() {
   const event = new CustomEvent("regionSelected", { detail: { regionName: null } });
   window.dispatchEvent(event);
 
+  // regionName이 null이더라도 roadId가 설정되어 있다면 그래프 초기화
+  if (currentRoadId) {
+    showGraphs(currentRoadId, null);
+  }
+
   // 팝업 초기화: "통행료 부과 전" 상태로 복원
   featureGroup.eachLayer((layer) => {
     if (layer instanceof L.Polyline) {

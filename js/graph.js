@@ -3,13 +3,14 @@ let currentRoadId = null;     // 선택된 roadId 저장
 
 // regionName 이벤트 리스너
 window.addEventListener("regionSelected", (event) => {
-    const regionName = event.detail.regionName; // 전달된 regionName
-    console.log(`Region selected: ${regionName}`);
+    currentRegionName = event.detail.regionName; // 전달된 regionName
+    console.log(`Region selected: ${currentRegionName}`);
   
+    // roadId가 설정된 경우 바로 그래프 업데이트
     if (currentRoadId) {
-      showGraphs(currentRoadId, regionName); // regionName이 null이면 data_feeBefore.csv만 사용
+      showGraphs(currentRoadId, currentRegionName);
     }
-  });
+});
   
 
 // roadSelected 이벤트 리스너
@@ -48,13 +49,13 @@ window.addEventListener("roadSelected", (event) => {
         // 기존 그래프 삭제
         d3.select("#speedGraph").selectAll("*").remove();
         d3.select("#densityGraph").selectAll("*").remove();
-        d3.select("#heatmap-container").selectAll("*").remove(); // 히트맵 컨테이너 초기화
   
         // 그래프 생성
         drawGraph(filteredRegionData, filteredFeeBefore);
       })
       .catch((error) => console.error("Error loading or filtering data:", error));
   }
+  
   
 
   function drawGraph(regionData, feeBeforeData) {
