@@ -1,4 +1,4 @@
-let toggle = true;
+let toggle = false;
 
 function menuin_out() {
   const menu = document.getElementById("graphbar");
