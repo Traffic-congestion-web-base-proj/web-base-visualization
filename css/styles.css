@@ -194,7 +194,7 @@ body, html {
   width: 510px;
   height: 90%;
   z-index: 99;
-  transition: right 1s;
+  transition: right 0.3s ease-in-out;
 }
 #graphbar::-webkit-scrollbar{ /*메뉴 스크롤바 안보이게 하기*/
   display: none;
@@ -213,7 +213,7 @@ body, html {
   font-size: 30px; /* 글자 크기 */
   font-weight: bold;
 
-  transition: right 1s;
+  transition: right 0.3s ease-in-out;
 }
 
 #graphs {
