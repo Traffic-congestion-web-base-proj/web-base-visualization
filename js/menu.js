@@ -13,7 +13,7 @@ function menuin_out() {
     toggle = false;
   } else {
     menu.style.right = "5px";
-    button.style.right = "515px";
+    button.style.right = "510px";
     button.value = ">";
 
     toggle = true;
@@ -22,6 +22,7 @@ function menuin_out() {
 
 // 선택된 도로 ID로 그래프를 생성
 function onRoadSelected(roadId) {
-  document.getElementById("graphbar").style.display = "block"; // 그래프 표시 영역 열기
+  document.getElementById("graphbar");
+  menu.style.display = "block"; // 그래프 표시 영역 열기
   showGraphs(roadId); // roadId에 따라 그래프 생성
 }
