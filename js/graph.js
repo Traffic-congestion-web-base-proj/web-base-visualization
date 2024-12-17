@@ -181,7 +181,7 @@ window.addEventListener("roadSelected", (event) => {
       );
   
     densitySvg.append("g")
-      .attr("transform", "translate(50,0)")
+      .attr("transform", "translate(40,0)")
       .call(d3.axisLeft(yScaleDensity));
   
     const lineDensity = d3.line()
@@ -193,7 +193,7 @@ window.addEventListener("roadSelected", (event) => {
       .datum(validFeeBeforeData)
       .attr("fill", "none")
       .attr("stroke", "orange")
-      .attr("stroke-width", 3)
+      .attr("stroke-width", 2)
       .attr("d", lineDensity);
   
     // regionData 밀도 선
@@ -202,7 +202,7 @@ window.addEventListener("roadSelected", (event) => {
         .datum(validRegionData)
         .attr("fill", "none")
         .attr("stroke", "blue")
-        .attr("stroke-width", 3)
+        .attr("stroke-width", 2)
         .attr("d", lineDensity);
     }
   
