@@ -231,3 +231,12 @@ body, html {
   height: 300px;
 }
 
+#roadInfo {
+  position: relative;
+  font-size: 24px; 
+  font-weight: bold;
+  text-transform: capitalize;
+  text-align: center;
+  line-height: 1.5em;
+  color: #000; 
+}
