@@ -1,5 +1,6 @@
 /* 스타일 추가 */
-body, html {
+body,
+html {
   margin: 0;
   padding: 0;
   width: 100%;
@@ -185,22 +186,24 @@ body, html {
   background-color: #c62828;
 }
 
-#graphbar{
+#graphbar {
   position: fixed;
   overflow: scroll;
   top: 60px;
   right: -580px;
-  background: rgb(255, 255, 255);
+  background: rgba(244, 244, 244, 0.868);
   width: 580px;
   height: 90%;
   z-index: 99;
   transition: right 0.3s ease-in-out;
 }
-#graphbar::-webkit-scrollbar{ /*메뉴 스크롤바 안보이게 하기*/
+#graphbar::-webkit-scrollbar {
+  /*메뉴 스크롤바 안보이게 하기*/
   display: none;
 }
 
-#menu_button{ /*메뉴버튼*/
+#menu_button {
+  /*메뉴버튼*/
   position: absolute;
   top: 45%;
   right: 0px;
@@ -226,35 +229,34 @@ body, html {
   justify-content: space-around;
 }
 
-#speedGraph, #densityGraph {
+#speedGraph,
+#densityGraph {
   width: 45%;
   height: 300px;
 }
 
-
 /* Road Info 스타일 */
-#roadInfo { 
-    top: 5px;          /* 화면 위에서 20px 떨어짐 */
-    left: 20px;        /* 화면 오른쪽에서 20px 떨어짐 */
-    background: #f9f9f9;
-    border: 1px solid #ddd;
-    border-radius: 10px;
-    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
-    padding: 15px 20px;
-    text-align: center;
-    font-family: Arial, sans-serif;
-    font-size: 18px;
-    color: #333;
-    z-index: 10;        /* 다른 요소 위에 표시되도록 z-index 설정 */
-    width: 600px;       /* 고정된 너비 설정 */
-    max-width: 100%;     /* 화면 너비에 따라 최대 크기 제한 */
-    box-sizing: border-box; /* padding 포함 크기 계산 */
-    
-
-  }
+#roadInfo {
+  top: 5px; /* 화면 위에서 20px 떨어짐 */
+  left: 20px; /* 화면 오른쪽에서 20px 떨어짐 */
+  background: #f9f9f9;
+  border: 1px solid #ddd;
+  border-radius: 10px;
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+  padding: 15px 20px;
+  text-align: center;
+  font-family: Arial, sans-serif;
+  font-size: 18px;
+  color: #333;
+  z-index: 10; /* 다른 요소 위에 표시되도록 z-index 설정 */
+  width: 600px; /* 고정된 너비 설정 */
+  max-width: 100%; /* 화면 너비에 따라 최대 크기 제한 */
+  box-sizing: border-box; /* padding 포함 크기 계산 */
+}
 
 /* Road Name과 Road ID 구분 */
-#roadName, #roadId {
+#roadName,
+#roadId {
   font-weight: bold; /* 강조 */
   color: #007bff; /* 파란색 글씨 */
 }
@@ -271,14 +273,13 @@ body, html {
   margin-bottom: 10px;
   color: #555;
 }
-=======
+
 #roadInfo {
   position: relative;
-  font-size: 24px; 
+  font-size: 24px;
   font-weight: bold;
   text-transform: capitalize;
   text-align: center;
   line-height: 1.5em;
-  color: #000; 
+  color: #000;
 }
-

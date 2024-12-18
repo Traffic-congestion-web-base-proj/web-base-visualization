@@ -62,7 +62,7 @@ function loadDensityData(previousDensityPath, isAfterFee = false) {
 
 function updateRoads(filteredDensityData, isAfterFee = false) {
   console.log("updateRoads");
-
+  featureGroup.clearLayers();
   // 밀도 데이터를 LINK_ID로 매핑
   const densityMap = new Map();
   filteredDensityData.forEach((row) => {
@@ -150,7 +150,7 @@ function updateRoads(filteredDensityData, isAfterFee = false) {
           pane: "overlayPane", // 클릭 가능 영역
           interactive: true, // 클릭 활성화
         });
-        
+
         // 팝업 설정
         polyline.bindPopup(
           isAfterFee
@@ -165,7 +165,7 @@ function updateRoads(filteredDensityData, isAfterFee = false) {
               평균 속도: ${previousData.speed ? `${previousData.speed.toFixed(2)} km/h` : "데이터 없음"}<br>
               진입 차량 수: ${previousData.entered ? `${previousData.entered}` : "데이터 없음"}`
         );
-        
+
         // 이벤트 설정
         polyline.on("mouseover", function () {
           if (!this.isPopupOpen()) {
@@ -183,10 +183,9 @@ function updateRoads(filteredDensityData, isAfterFee = false) {
           const event = new CustomEvent("roadSelected", { detail: { roadId: road_id } });
           window.dispatchEvent(event);
         });
-        
+
         // featureGroup에 추가
         featureGroup.addLayer(polyline);
-        
       });
 
       map.on("zoomend", () => {
@@ -202,7 +201,6 @@ function updateRoads(filteredDensityData, isAfterFee = false) {
     })
     .catch((error) => console.error("Error fetching edge data:", error));
 }
-
 
 // 초기 밀도 데이터 로드
 loadDensityData(previousDensityPath);
