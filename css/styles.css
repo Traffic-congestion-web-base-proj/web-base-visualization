@@ -249,7 +249,7 @@ html {
   font-size: 18px;
   color: #333;
   z-index: 10; /* 다른 요소 위에 표시되도록 z-index 설정 */
-  width: 600px; /* 고정된 너비 설정 */
+  width: 540px; /* 고정된 너비 설정 */
   max-width: 100%; /* 화면 너비에 따라 최대 크기 제한 */
   box-sizing: border-box; /* padding 포함 크기 계산 */
 }

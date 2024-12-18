@@ -260,6 +260,27 @@ function drawHeatmap(enteredData) {
       tooltip.style("display", "none");
     });
 
+  svg
+    .append("g")
+    .attr("transform", `translate(0, ${margin.top + cellHeight + 20})`) // 시간 라벨 위치 설정
+    .call(
+      d3
+        .axisBottom(xScale)
+        .ticks(12)
+        .tickFormat((d) => `${Math.floor(d)}:00`)
+    );
+
+  // 시간 라벨 추가 (X축)
+  svg
+    .append("g")
+    .attr("transform", `translate(0, ${margin.top + cellHeight + 20})`) // 시간 라벨 위치 설정
+    .call(
+      d3
+        .axisBottom(xScale)
+        .ticks(12)
+        .tickFormat((d) => `${Math.floor(d)}:00`)
+    );
+
   // 그래프 제목
   svg
     .append("text")
