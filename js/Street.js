@@ -1,19 +1,20 @@
 var featureGroup = L.featureGroup().addTo(map);
-var isRoadHovered = false; // 도로 위에 마우스가 있는지 여부 플래그
-
-// 도로 및 밀도 데이터 경로
+var isRoadHovered = false;
 const edgePath = "./data/gangnam_edge.csv";
-let previousDensityPath = "./data/data_feeBefore.csv"; // 초기 밀도 데이터 경로
-
-// 슬라이더 요소
+let previousDensityPath = "./data/data_feeBefore.csv";
 const timeSlider = document.getElementById("timeSlider");
 const timeLabel = document.getElementById("timeLabel");
 
+let edgeDataCache = null;
+let densityDataCache = null;
+let previousDensityMap = new Map();
+let polylinesMap = new Map();
+let isAfterFeeGlobal = false;
+
 function calculateWeight(zoomLevel) {
-  return Math.max(1, (zoomLevel - 14) * 3); // 최소값 1, 줌 레벨에 따라 증가
+  return Math.max(1, (zoomLevel - 14) * 3);
 }
 
-// 초를 HH:MM 형식으로 변환하는 유틸리티 함수
 function secondsToHHMM(seconds) {
   const h = Math.floor(seconds / 3600)
     .toString()
@@ -24,46 +25,135 @@ function secondsToHHMM(seconds) {
   return `${h}:${m}`;
 }
 
-// 밀도 데이터 로드 및 슬라이더 이벤트 처리
-function loadDensityData(previousDensityPath, isAfterFee = false) {
-  console.log("loadDensityData");
-  fetch(previousDensityPath)
-    .then((res) => res.text())
-    .then((densityText) => {
-      const densityData = d3.csvParse(densityText);
+async function initializeData() {
+  if (!edgeDataCache) {
+    const edgeText = await fetch(edgePath).then((res) => res.text());
+    edgeDataCache = d3.csvParse(edgeText);
+  }
 
-      // 슬라이더의 최대값을 84600 (23:30)으로 설정
-      timeSlider.max = 84600;
+  await loadDensityData(previousDensityPath, false);
 
-      // 슬라이더 이벤트 핸들러
-      timeSlider.addEventListener("input", () => {
-        const selectedTime = parseInt(timeSlider.value, 10);
-        const nextTime = Math.min(selectedTime + 1800, 86400); // 30분 간격, 최대 24:00:00
+  createPolylines();
 
-        // 다음 시간이 24:00:00을 넘어가지 않도록 조정
-        const adjustedNextTime = nextTime > 86400 ? 86400 : nextTime;
-
-        // 슬라이더 라벨 업데이트
-        timeLabel.textContent = `${secondsToHHMM(selectedTime)} - ${secondsToHHMM(adjustedNextTime)}`;
-
-        // 선택된 시간대 데이터 필터링
-        const filteredDensityData = densityData.filter(
-          (row) => parseFloat(row.interval_begin) === selectedTime && parseFloat(row.interval_end) === adjustedNextTime
-        );
-
-        updateRoads(filteredDensityData, isAfterFee);
+  map.on("zoomend", () => {
+    const currentZoom = map.getZoom();
+    polylinesMap.forEach((polyline) => {
+      polyline.setStyle({
+        weight: calculateWeight(currentZoom),
       });
+    });
+  });
 
-      // 초기 렌더링
-      timeSlider.dispatchEvent(new Event("input"));
-    })
-    .catch((error) => console.error("Error fetching density data:", error));
+  timeSlider.max = 84600; // 23:30
+  timeSlider.addEventListener("input", handleTimeChange);
+  timeSlider.dispatchEvent(new Event("input"));
+}
+
+function createPolylines() {
+  edgeDataCache.forEach((row) => {
+    if (!row.geometry || !row.geometry.startsWith("LINESTRING")) return;
+
+    const geometry = row.geometry.slice(row.geometry.indexOf("(") + 1, row.geometry.lastIndexOf(")"));
+    const coordinates = geometry.split(", ").map((coord) => {
+      const [lng, lat] = coord.trim().split(/\s+/).map(parseFloat);
+      return [lat, lng];
+    });
+
+    const roadName = row.ROAD_NAME || "도로명없음";
+    const roadId = row.LINK_ID.trim();
+
+    const polyline = new L.polyline(coordinates, {
+      color: "green",
+      weight: calculateWeight(map.getZoom()),
+      customData: {
+        road_name: roadName,
+        road_id: roadId,
+      },
+      pane: "overlayPane",
+      interactive: true,
+    });
+
+    polyline.bindTooltip("데이터 로딩 중...", {
+      permanent: false,
+      direction: "auto",
+    });
+
+    polyline.on("click", function () {
+      const { road_id } = this.options.customData;
+      const event = new CustomEvent("roadSelected", { detail: { roadId: road_id } });
+      window.dispatchEvent(event);
+    });
+
+    polylinesMap.set(roadId, polyline);
+    featureGroup.addLayer(polyline);
+  });
+}
+
+async function loadDensityData(path, isAfterFee = false) {
+  isAfterFeeGlobal = isAfterFee;
+
+  if (densityDataCache && densityDataCache.path === path) {
+    return;
+  }
+
+  const densityText = await fetch(path).then((res) => res.text());
+  const densityData = d3.csvParse(densityText);
+  densityDataCache = { path, data: densityData };
+
+  if (!isAfterFee) {
+    updatePreviousDensityMap();
+  }
+}
+
+function updatePreviousDensityMap() {
+  const selectedTime = parseInt(timeSlider.value, 10);
+  const nextTime = Math.min(selectedTime + 1800, 86400);
+  const adjustedNextTime = nextTime > 86400 ? 86400 : nextTime;
+
+  const filteredDensityData = densityDataCache.data.filter(
+    (row) => parseFloat(row.interval_begin) === selectedTime && parseFloat(row.interval_end) === adjustedNextTime
+  );
+
+  previousDensityMap.clear();
+  filteredDensityData.forEach((row) => {
+    const linkId = row.id.toString().trim();
+    const density = parseFloat(row.density);
+    const speed = parseFloat(row.speed);
+    const entered = parseInt(row.entered, 10);
+    if (!isNaN(density)) {
+      previousDensityMap.set(linkId, { density, speed, entered });
+    }
+  });
+}
+
+function handleTimeChange() {
+  const selectedTime = parseInt(timeSlider.value, 10);
+  const nextTime = Math.min(selectedTime + 1800, 86400); // 30분 간격
+  const adjustedNextTime = nextTime > 86400 ? 86400 : nextTime;
+
+  timeLabel.textContent = `${secondsToHHMM(selectedTime)} - ${secondsToHHMM(adjustedNextTime)}`;
+
+  const filteredDensityData = densityDataCache.data.filter(
+    (row) => parseFloat(row.interval_begin) === selectedTime && parseFloat(row.interval_end) === adjustedNextTime
+  );
+
+  if (!isAfterFeeGlobal) {
+    previousDensityMap.clear();
+    filteredDensityData.forEach((row) => {
+      const linkId = row.id.toString().trim();
+      const density = parseFloat(row.density);
+      const speed = parseFloat(row.speed);
+      const entered = parseInt(row.entered, 10);
+      if (!isNaN(density)) {
+        previousDensityMap.set(linkId, { density, speed, entered });
+      }
+    });
+  }
+
+  updateRoads(filteredDensityData, isAfterFeeGlobal);
 }
 
 function updateRoads(filteredDensityData, isAfterFee = false) {
-  console.log("updateRoads");
-  featureGroup.clearLayers();
-  // 밀도 데이터를 LINK_ID로 매핑
   const densityMap = new Map();
   filteredDensityData.forEach((row) => {
     const linkId = row.id.toString().trim();
@@ -75,140 +165,76 @@ function updateRoads(filteredDensityData, isAfterFee = false) {
     }
   });
 
-  // 통행료 부과 전 밀도 저장
-  if (!isAfterFee) {
-    previousDensityMap = new Map(densityMap); // 복사 저장
+  polylinesMap.forEach((polyline, roadId) => {
+    const previousData = previousDensityMap.get(roadId) || { density: 0, speed: null, entered: null };
+    const currentData = densityMap.get(roadId) || { density: 0, speed: null, entered: null };
+
+    const color = currentData.density < 1 ? "green" : currentData.density <= 100 ? "orange" : "red";
+    polyline.setStyle({ color: color });
+
+    const tooltipContent = isAfterFee
+      ? `도로명: ${polyline.options.customData.road_name}<br>
+         LINK_ID: ${roadId}<br>
+         밀도: ${currentData.density.toFixed(2)}<br>
+         평균 속도: ${currentData.speed ? `${currentData.speed.toFixed(2)} km/h` : "데이터 없음"}<br>
+         진입 차량 수: ${currentData.entered ? `${currentData.entered}` : "데이터 없음"}`
+      : `도로명: ${polyline.options.customData.road_name}<br>
+         LINK_ID: ${roadId}<br>
+         밀도: ${previousData.density.toFixed(2)}<br>
+         평균 속도: ${previousData.speed ? `${previousData.speed.toFixed(2)} km/h` : "데이터 없음"}<br>
+         진입 차량 수: ${previousData.entered ? `${previousData.entered}` : "데이터 없음"}`;
+
+    polyline.bindTooltip(tooltipContent, {
+      permanent: false,
+      direction: "auto",
+      sticky: true,
+    });
+  });
+}
+
+function resetRoadsToInitialState() {
+  if (!featureGroup) {
+    console.error("FeatureGroup이 초기화되지 않았습니다.");
+    return;
   }
 
-  // 기존 레이어를 업데이트
-  featureGroup.eachLayer((layer) => {
-    if (layer instanceof L.Polyline) {
-      const roadId = layer.options.customData.road_id;
-      const previousData = previousDensityMap.get(roadId) || { density: 0, speed: null, entered: null };
-      const currentData = densityMap.get(roadId) || { density: 0, speed: null, entered: null };
+  featureGroup.clearLayers();
+  polylinesMap.clear(); // 폴리라인 매핑도 초기화
 
-      const color = currentData.density < 1 ? "green" : currentData.density <= 100 ? "orange" : "red";
+  updateRoadsWithNewData("./data/data_feeBefore.csv", false);
 
-      // 레이어 스타일 및 팝업 업데이트
-      layer.setStyle({ color: color });
-      layer.bindPopup(
-        isAfterFee
-          ? // 통행료 부과 후 팝업 내용
-            `도로명: ${layer.options.customData.road_name}<br>
-            LINK_ID: ${roadId}<br>
-            혼잡도: ${currentData.density.toFixed(2)}<br>
-            평균 속도: ${currentData.speed ? `${currentData.speed.toFixed(2)} km/h` : "데이터 없음"}<br>
-            진입 차량 수: ${currentData.entered ? `${currentData.entered}` : "데이터 없음"}`
-          : // 통행료 부과 전 팝업 내용
-            `도로명: ${layer.options.customData.road_name}<br>
-            LINK_ID: ${roadId}<br>
-            밀도: ${previousData.density.toFixed(2)}<br>
-            평균 속도: ${previousData.speed ? `${previousData.speed.toFixed(2)} km/h` : "데이터 없음"}<br>
-            진입 차량 수: ${previousData.entered ? `${previousData.entered}` : "데이터 없음"}`
-      );
+  createPolylines();
+
+  if (selectedRegionName) {
+    const oldListItem = regionItemMap[selectedRegionName];
+    if (oldListItem) {
+      oldListItem.style.pointerEvents = "auto";
+      oldListItem.style.opacity = "1";
     }
-  });
 
-  // 새로 추가할 폴리라인 처리
-  fetch(edgePath)
-    .then((res) => res.text())
-    .then((edgeText) => {
-      const edgeData = d3.csvParse(edgeText);
+    if (regionLayerMap[selectedRegionName]) {
+      updateRegionStyle(selectedRegionName, regionLayerMap[selectedRegionName], false);
+    }
 
-      edgeData.forEach((row) => {
-        if (!row.geometry || !row.geometry.startsWith("LINESTRING")) return;
+    selectedRegionName = null;
+  }
 
-        const geometry = row.geometry.slice(row.geometry.indexOf("(") + 1, row.geometry.lastIndexOf(")"));
-        const coordinates = geometry.split(", ").map((coord) => {
-          const [lng, lat] = coord.trim().split(/\s+/).map(parseFloat);
-          return [lat, lng];
-        });
+  const event = new CustomEvent("regionSelected", { detail: { regionName: null } });
+  window.dispatchEvent(event);
 
-        const roadName = row.ROAD_NAME || "도로명없음";
-        const roadId = row.LINK_ID.trim();
+  if (typeof currentRoadId !== "undefined" && currentRoadId) {
+    showGraphs(currentRoadId, null);
+  }
 
-        if (!densityMap.has(roadId)) return;
-
-        const previousData = previousDensityMap.get(roadId) || { density: 0, speed: null, entered: null };
-        const currentData = densityMap.get(roadId) || { density: 0, speed: null, entered: null };
-
-        const color = currentData.density < 1 ? "green" : currentData.density <= 100 ? "orange" : "red";
-
-        const polyline = new L.polyline(coordinates, {
-          color: color,
-          weight: calculateWeight(map.getZoom()),
-          customData: {
-            road_name: roadName,
-            road_id: roadId,
-            previous_density: previousData.density,
-            current_density: isAfterFee ? currentData.density : null,
-            previous_speed: previousData.speed,
-            current_speed: currentData.speed,
-            previous_entered: previousData.entered,
-            current_entered: currentData.entered,
-          },
-          pane: "overlayPane", // 클릭 가능 영역
-          interactive: true, // 클릭 활성화
-        });
-
-        // 팝업 설정
-        polyline.bindPopup(
-          isAfterFee
-            ? `도로명: ${roadName}<br>
-              LINK_ID: ${roadId}<br>
-              밀도: ${currentData.density.toFixed(2)}<br>
-              평균 속도: ${currentData.speed ? `${currentData.speed.toFixed(2)} km/h` : "데이터 없음"}<br>
-              진입 차량 수: ${currentData.entered ? `${currentData.entered}` : "데이터 없음"}`
-            : `도로명: ${roadName}<br>
-              LINK_ID: ${roadId}<br>
-              혼잡도: ${previousData.density.toFixed(2)}<br>
-              평균 속도: ${previousData.speed ? `${previousData.speed.toFixed(2)} km/h` : "데이터 없음"}<br>
-              진입 차량 수: ${previousData.entered ? `${previousData.entered}` : "데이터 없음"}`
-        );
-
-        // 이벤트 설정
-        polyline.on("mouseover", function () {
-          if (!this.isPopupOpen()) {
-            this.openPopup();
-          }
-        });
-        polyline.on("mouseout", function () {
-          if (this.isPopupOpen()) {
-            this.closePopup();
-          }
-        });
-        polyline.on("click", function () {
-          const { road_id } = this.options.customData;
-          // CustomEvent로 roadId 전달
-          const event = new CustomEvent("roadSelected", { detail: { roadId: road_id } });
-          window.dispatchEvent(event);
-        });
-
-        // featureGroup에 추가
-        featureGroup.addLayer(polyline);
-      });
-
-      map.on("zoomend", () => {
-        const currentZoom = map.getZoom();
-        featureGroup.eachLayer((layer) => {
-          if (layer instanceof L.Polyline) {
-            layer.setStyle({
-              weight: calculateWeight(currentZoom),
-            });
-          }
-        });
-      });
-    })
-    .catch((error) => console.error("Error fetching edge data:", error));
+  alert("도로 상태가 초기화되었습니다.");
 }
 
-// 초기 밀도 데이터 로드
-loadDensityData(previousDensityPath);
-
-// 밀도 데이터 변경 함수 (초기화 및 구역 변경에 사용)
-function updateRoadsWithNewData(newDensityPath) {
-  loadDensityData(newDensityPath, true); // 통행료 부과 후 데이터 로드
+async function updateRoadsWithNewData(newDensityPath, isAfterFee = true) {
+  await loadDensityData(newDensityPath, isAfterFee);
+  handleTimeChange(); // 데이터 로드 후 툴팁 갱신
 }
+
+initializeData();
 
 export { updateRoadsWithNewData };
-export let previousDensityMap = new Map();
+export { previousDensityMap };
