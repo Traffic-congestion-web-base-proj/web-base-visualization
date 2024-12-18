@@ -76,6 +76,20 @@ function drawGraph(regionData, feeBeforeData) {
     feeBeforeData.forEach(d => d.xValue = d.interval_begin / 3600);
     regionData.forEach(d => d.xValue = d.interval_begin / 3600);
 
+    // 마지막 데이터가 23:30이면 24:00으로 가상의 데이터 추가
+    const extendDataTo24 = (data) => {
+        const lastPoint = data[data.length - 1];
+        if (lastPoint && lastPoint.xValue === 23.5) {
+        data.push({
+            ...lastPoint,
+            xValue: 24.0, // 24시로 확장
+        });
+        }
+    };
+
+    extendDataTo24(feeBeforeData);
+    extendDataTo24(regionData);
+
     const createDualAxisGraph = (containerId, data, title) => {
         d3.select(`#${containerId}`).select("svg").remove();
 
@@ -113,6 +127,38 @@ function drawGraph(regionData, feeBeforeData) {
           .attr("x", 300).attr("y", 20)
           .attr("text-anchor", "middle")
           .text(title);
+        // 범례 추가
+    const legend = svg.append("g").attr("transform", "translate(485, 10)");
+
+    // Speed Legend
+    legend.append("rect")
+        .attr("x", 0)
+        .attr("y", 0)
+        .attr("width", 15)
+        .attr("height", 15)
+        .attr("fill", "blue");
+
+    legend.append("text")
+        .attr("x", 20)
+        .attr("y", 12)
+        .text("Speed")
+        .style("font-size", "12px")
+        .attr("alignment-baseline", "middle");
+
+    // Density Legend
+    legend.append("rect")
+        .attr("x", 0)
+        .attr("y", 20)
+        .attr("width", 15)
+        .attr("height", 15)
+        .attr("fill", "orange");
+
+    legend.append("text")
+        .attr("x", 20)
+        .attr("y", 32)
+        .text("Density")
+        .style("font-size", "12px")
+        .attr("alignment-baseline", "middle");
     };
 
     createDualAxisGraph("feeBeforeGraph", feeBeforeData, "Speed and Density (Before Toll)");
