@@ -231,3 +231,43 @@ body, html {
   height: 300px;
 }
 
+
+/* Road Info 스타일 */
+#roadInfo { 
+    top: 5px;          /* 화면 위에서 20px 떨어짐 */
+    left: 20px;        /* 화면 오른쪽에서 20px 떨어짐 */
+    background: #f9f9f9;
+    border: 1px solid #ddd;
+    border-radius: 10px;
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+    padding: 15px 20px;
+    text-align: center;
+    font-family: Arial, sans-serif;
+    font-size: 18px;
+    color: #333;
+    z-index: 10;        /* 다른 요소 위에 표시되도록 z-index 설정 */
+    width: 600px;       /* 고정된 너비 설정 */
+    max-width: 100%;     /* 화면 너비에 따라 최대 크기 제한 */
+    box-sizing: border-box; /* padding 포함 크기 계산 */
+    
+
+  }
+
+/* Road Name과 Road ID 구분 */
+#roadName, #roadId {
+  font-weight: bold; /* 강조 */
+  color: #007bff; /* 파란색 글씨 */
+}
+
+#roadInfo span {
+  margin: 0 10px; /* 각 항목 간격 */
+}
+
+#roadInfo::before {
+  content: "Selected Road Details";
+  display: block;
+  font-size: 20px;
+  font-weight: bold;
+  margin-bottom: 10px;
+  color: #555;
+}
