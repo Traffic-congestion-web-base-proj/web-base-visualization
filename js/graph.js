@@ -204,11 +204,14 @@ function drawHeatmap(enteredData) {
     .attr("transform", d => `rotate(-45, ${xScale(d.interval_begin / 3600) + cellWidth / 2}, ${margin.top + cellHeight + 20})`) // 라벨 기울임
     .text(d => `${Math.floor(d.interval_begin / 3600)}:00`);
 
-  // 타이틀
+  // 타이틀 (히트맵 제목 추가)
   svg.append("text")
-    .attr("x", svgWidth / 2).attr("y", margin.top / 2)
+    .attr("x", svgWidth / 2) // 중앙 정렬
+    .attr("y", margin.top / 2)
     .attr("text-anchor", "middle")
     .attr("font-size", "16px")
+    .attr("font-weight", "bold")
+    .attr("fill", "#333") // 글자 색상
     .text("Time-based Vehicle Entry Heatmap");
 }
 
